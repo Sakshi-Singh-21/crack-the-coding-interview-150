@@ -1,0 +1,33 @@
+name: Update Progress
+
+on:
+  push:
+    branches: [ main ]   # Runs when you push to main branch
+  workflow_dispatch:     # Lets you run manually too
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Count progress
+        id: progress
+        run: |
+          total=$(grep -c "\- \[" progress.md)
+          done=$(grep -c "\- \[x\]" progress.md)
+          echo "done=$done" >> $GITHUB_OUTPUT
+          echo "total=$total" >> $GITHUB_OUTPUT
+
+      - name: Save progress.json
+        run: |
+          mkdir -p public
+          echo "{ \"done\": ${{ steps.progress.outputs.done }}, \"total\": ${{ steps.progress.outputs.total }} }" > public/progress.json
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
