@@ -1,0 +1,39 @@
+name: Update Progress Badge
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # allows manual trigger
+
+jobs:
+  update-badge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Count solved problems
+        run: |
+          SOLVED=$(grep -o "\- \[x\]" progress.md | wc -l)
+          TOTAL=$(grep -o "\- \[" progress.md | wc -l)
+          echo "SOLVED=$SOLVED" >> $GITHUB_ENV
+          echo "TOTAL=$TOTAL" >> $GITHUB_ENV
+          echo "PERCENT=$((SOLVED*100/TOTAL))" >> $GITHUB_ENV
+
+      - name: Generate Badge
+        run: |
+          echo "![Progress](https://img.shields.io/badge/Progress-${SOLVED}%2F${TOTAL}-brightgreen?style=for-the-badge)" > PROGRESS_BADGE.md
+
+      - name: Commit & Push Badge
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add PROGRESS_BADGE.md
+          git commit -m "Update progress badge to ${SOLVED}/${TOTAL}"
+          git push
