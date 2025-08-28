@@ -2,32 +2,33 @@ name: Update Progress
 
 on:
   push:
-    branches: [ main ]   # Runs when you push to main branch
-  workflow_dispatch:     # Lets you run manually too
+    paths:
+      - "progress.md"
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Count progress
-        id: progress
         run: |
-          total=$(grep -c "\- \[" progress.md)
-          done=$(grep -c "\- \[x\]" progress.md)
-          echo "done=$done" >> $GITHUB_OUTPUT
-          echo "total=$total" >> $GITHUB_OUTPUT
+          total=$(grep -c "\- \[" progress.md || true)
+          done=$(grep -c "\- \[x\]" progress.md || true)
+          echo "total=$total" >> $GITHUB_ENV
+          echo "done=$done" >> $GITHUB_ENV
 
       - name: Save progress.json
         run: |
-          mkdir -p public
-          echo "{ \"done\": ${{ steps.progress.outputs.done }}, \"total\": ${{ steps.progress.outputs.total }} }" > public/progress.json
+          echo "{\"total\": $total, \"done\": $done}" > progress.json
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public
+      - name: Commit progress.json
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add progress.json
+          git commit -m "Update progress.json" || echo "No changes to commit"
+          git push
