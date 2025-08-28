@@ -2,14 +2,15 @@ name: Update Progress
 
 on:
   push:
-    paths:
-      - "progress.md"
-  workflow_dispatch:
+    branches:
+      - main
+
+permissions:
+  contents: write   # ✅ allow committing to the repo
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -18,12 +19,7 @@ jobs:
         run: |
           total=$(grep -c "\- \[" progress.md || true)
           done=$(grep -c "\- \[x\]" progress.md || true)
-          echo "total=$total" >> $GITHUB_ENV
-          echo "done=$done" >> $GITHUB_ENV
-
-      - name: Save progress.json
-        run: |
-          echo "{\"total\": $total, \"done\": $done}" > progress.json
+          echo "{ \"total\": $total, \"done\": $done }" > progress.json
 
       - name: Commit progress.json
         run: |
